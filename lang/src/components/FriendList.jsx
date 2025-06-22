@@ -4,7 +4,7 @@ function FriendList({ currentUser }) {
   const [friends, setFriends] = useState([]);
 
   useEffect(() => {
-    fetch(`http://localhost:8000/friends/${currentUser}`)
+    fetch(`https://langtalk.onrender.com/friends/${currentUser}`)
       .then((res) => res.json())
       .then((data) => {
         setFriends(data);
