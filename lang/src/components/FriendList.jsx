@@ -14,7 +14,7 @@ function FriendList({ currentUser }) {
 
   const startCall = async (friend) => {
     try {
-      //const res = await fetch("http://localhost:8000/start-call", {
+ 
       const res = await fetch("https://langtalk.onrender.com/start-call", {
 
         method: "POST",
