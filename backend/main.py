@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Request
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import mysql.connector
@@ -6,23 +6,22 @@ import json
 
 app = FastAPI()
 
-# CORS
+# Allow frontend to connect
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173"],  # Update this if frontend domain changes
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# MySQL Connection
-
+# DB connection
 def get_connection():
     return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="boss",
-        database="videocallapp"
+        host=os.getenv("DB_HOST"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        database=os.getenv("DB_NAME")
     )
 
 # Models
@@ -42,26 +41,25 @@ class AcceptRequest(BaseModel):
     from_user: str
     to_user: str
 
-# Global connections store
+# Store active sockets
 connections = {}
 
 @app.websocket("/ws/{username}")
 async def websocket_endpoint(websocket: WebSocket, username: str):
     await websocket.accept()
     connections[username] = websocket
+    print(f"✅ {username} connected")
     try:
         while True:
             data = await websocket.receive_text()
-            try:
-                message = json.loads(data)
-                to_user = message.get("to")
-                if to_user and to_user in connections:
-                    await connections[to_user].send_text(json.dumps(message))
-            except Exception as e:
-                print("Invalid message format:", data, e)
+            message = json.loads(data)
+            to_user = message.get("to")
+            if to_user in connections:
+                await connections[to_user].send_text(json.dumps(message))
     except WebSocketDisconnect:
         print(f"🔌 {username} disconnected")
-        del connections[username]
+        if username in connections:
+            del connections[username]
 
 @app.post("/register")
 def register(data: RegisterRequest):
@@ -71,7 +69,6 @@ def register(data: RegisterRequest):
         cursor.execute("SELECT * FROM users WHERE username=%s", (data.username,))
         if cursor.fetchone():
             raise HTTPException(status_code=400, detail="Username already exists")
-
         cursor.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (data.username, data.password))
         conn.commit()
         return {"message": "User registered successfully"}
@@ -98,11 +95,11 @@ def get_available_users(username: str):
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
     try:
-        cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
-        result = cursor.fetchone()
-        if not result:
+        cursor.execute("SELECT id FROM users WHERE username=%s", (username,))
+        user = cursor.fetchone()
+        if not user:
             raise HTTPException(status_code=404, detail="User not found")
-        user_id = result["id"]
+        user_id = user["id"]
 
         cursor.execute("""
             SELECT 
@@ -115,22 +112,21 @@ def get_available_users(username: str):
         """, (user_id, user_id, user_id))
 
         friend_ids = [row["friend_id"] for row in cursor.fetchall()]
-        friend_ids.append(user_id)
+        friend_ids.append(user_id)  # Exclude self
 
         if friend_ids:
-            format_strings = ','.join(['%s'] * len(friend_ids))
-            cursor.execute(f"SELECT username FROM users WHERE id NOT IN ({format_strings})", tuple(friend_ids))
+            format_str = ','.join(['%s'] * len(friend_ids))
+            cursor.execute(f"SELECT username FROM users WHERE id NOT IN ({format_str})", tuple(friend_ids))
         else:
             cursor.execute("SELECT username FROM users")
 
-        available_users = cursor.fetchall()
-        return available_users
+        return cursor.fetchall()
     finally:
         cursor.close()
         conn.close()
 
 @app.post("/friend-request")
-async def send_request(req: FriendRequest):
+async def send_friend_request(req: FriendRequest):
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
     try:
@@ -149,10 +145,10 @@ async def send_request(req: FriendRequest):
         conn.commit()
 
         if req.to_user in connections:
-            try:
-                await connections[req.to_user].send_text(f"🔔 Friend request from {req.from_user}")
-            except Exception as e:
-                print(f"Error sending WebSocket message: {e}")
+            await connections[req.to_user].send_text(json.dumps({
+                "type": "friend_request",
+                "from": req.from_user
+            }))
 
         return {"message": "Friend request sent"}
     finally:
@@ -170,7 +166,6 @@ async def get_friends(username: str):
             raise HTTPException(status_code=404, detail="User not found")
 
         user_id = user["id"]
-
         cursor.execute("""
             SELECT DISTINCT u.username
             FROM friend_requests fr
@@ -181,8 +176,7 @@ async def get_friends(username: str):
             WHERE fr.status = 'accepted' AND u.id != %s
         """, (user_id, user_id, user_id))
 
-        friends = cursor.fetchall()
-        return [f["username"] for f in friends]
+        return [f["username"] for f in cursor.fetchall()]
     finally:
         cursor.close()
         conn.close()
@@ -227,32 +221,36 @@ async def get_friend_requests(username: str):
             JOIN users u ON fr.from_user_id = u.id
             WHERE fr.to_user_id = %s AND fr.status = 'pending'
         """, (user['id'],))
-        requests = cursor.fetchall()
-        return [r["from_user"] for r in requests]
+        return [r["from_user"] for r in cursor.fetchall()]
     finally:
         cursor.close()
         conn.close()
 
 @app.post("/start-call")
-async def start_video_call(request: Request):
-    data = await request.json()
-    from_user = data.get("from")
-    to_user = data.get("to")
-
-    if not from_user or not to_user:
-        raise HTTPException(status_code=400, detail="Missing 'from' or 'to'")
+async def start_call(request: Request):
+    body = await request.json()
+    from_user = body.get("from")
+    to_user = body.get("to")
 
     if to_user in connections:
-        try:
-            await connections[to_user].send_text(
-                json.dumps({
-                    "type": "incoming_call",
-                    "from": from_user
-                })
-            )
-            return {"message": "Call initiated"}
-        except Exception as e:
-            print(f"WebSocket error: {e}")
-            raise HTTPException(status_code=500, detail="Failed to send call notification")
+        await connections[to_user].send_text(json.dumps({
+            "type": "incoming_call",
+            "from": from_user
+        }))
+        return {"message": "Call request sent"}
     else:
-        raise HTTPException(status_code=404, detail=f"{to_user} is not online")
+        raise HTTPException(status_code=404, detail="User is not online")
+
+@app.post("/end-call")
+async def end_call(request: Request):
+    body = await request.json()
+    from_user = body.get("from")
+    to_user = body.get("to")
+
+    if to_user in connections:
+        await connections[to_user].send_text(json.dumps({
+            "type": "hangup",
+            "from": from_user
+        }))
+    print(f"📴 Call ended: {from_user} → {to_user}")
+    return {"message": "Call ended"}
