@@ -4,7 +4,7 @@ function Notifications({ currentUser }) {
   const [requests, setRequests] = useState([]);
 
   useEffect(() => {
-    fetch(`http://localhost:8000/friend-requests/${currentUser}`)
+    fetch(`https://langtalk.onrender.com/friend-requests/${currentUser}`)
       .then((res) => res.json())
       .then((data) => setRequests(data));
   }, [currentUser]);
