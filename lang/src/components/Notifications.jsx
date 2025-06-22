@@ -10,7 +10,7 @@ function Notifications({ currentUser }) {
   }, [currentUser]);
 
   const acceptRequest = async (fromUser) => {
-    const res = await fetch(" https://langtalk.onrender.com/accept-request", {
+    const res = await fetch("https://langtalk.onrender.com/accept-request", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ from_user: fromUser, to_user: currentUser }),
