@@ -5,7 +5,7 @@ function AddFriend({ currentUser }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`http://localhost:8000/available-users/${currentUser}`)
+    fetch(`https://langtalk.onrender.com/available-users/${currentUser}`)
       .then((res) => res.json())
       .then((data) => {
         console.log("Available users:", data);
@@ -21,7 +21,7 @@ function AddFriend({ currentUser }) {
   const sendRequest = async (to_user) => {
     console.log("Sending friend request from:", currentUser, "to:", to_user);
     try {
-      const res = await fetch("http://localhost:8000/friend-request", {
+      const res = await fetch("https://langtalk.onrender.com/friend-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ from_user: currentUser, to_user }),
