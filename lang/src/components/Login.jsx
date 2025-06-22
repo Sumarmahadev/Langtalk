@@ -6,12 +6,13 @@ function Login({ onLogin }) {
 
   const handleLogin = async () => {
     try {
-  
        const res = await fetch("https://langtalk.onrender.com/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: name, password }),
-      });
+       method: "POST",
+       headers: { "Content-Type": "application/json" },
+       body: JSON.stringify({ username: name, password }),
+    });
+
+    
 
       if (!res.ok) throw new Error("Login failed");
 
