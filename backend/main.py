@@ -10,8 +10,7 @@ app = FastAPI()
 # Allow frontend to connect
 app.add_middleware(
     CORSMiddleware,
-  
-    allow_origins=["https://langtalk.netlify.app"],
+    allow_origins=["https://langtalk.netlify.app", "https://6857f6d42182a33772735a71--langtalk.netlify.app"]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
