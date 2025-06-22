@@ -6,6 +6,7 @@ function AddFriend({ currentUser }) {
 
   useEffect(() => {
     fetch(`http://localhost:8000/available-users/${currentUser}`)
+	//fetch(` https://metal-buckets-burn.loca.lt/available-users/${currentUser}`)
       .then((res) => res.json())
       .then((data) => {
         console.log("Available users:", data);
@@ -22,6 +23,7 @@ function AddFriend({ currentUser }) {
     console.log("Sending friend request from:", currentUser, "to:", to_user);
     try {
       const res = await fetch("http://localhost:8000/friend-request", {
+	//	const res = await fetch(" https://metal-buckets-burn.loca.lt/friend-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ from_user: currentUser, to_user }),

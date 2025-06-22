@@ -13,7 +13,8 @@ function Register({ onRegister }) {
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/register", {
+const res = await fetch("http://localhost:8000/register", {
+	 // const res = await fetch(" https://metal-buckets-burn.loca.lt/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),

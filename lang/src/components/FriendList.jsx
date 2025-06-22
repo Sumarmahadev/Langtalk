@@ -5,6 +5,7 @@ function FriendList({ currentUser }) {
 
   useEffect(() => {
     fetch(`http://localhost:8000/friends/${currentUser}`)
+	//fetch(` https://metal-buckets-burn.loca.lt/friends/${currentUser}`)
       .then((res) => res.json())
       .then((data) => {
         setFriends(data);
@@ -15,6 +16,7 @@ function FriendList({ currentUser }) {
   const startCall = async (friend) => {
     try {
       const res = await fetch("http://localhost:8000/start-call", {
+	//	  const res = await fetch(" https://metal-buckets-burn.loca.lt/start-call", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

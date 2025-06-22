@@ -1,154 +1,199 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-function Video({ currentUser, friend }) {
+function Video({ currentUser, friend, isCaller }) {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const peerConnection = useRef(null);
   const socket = useRef(null);
+  const localStream = useRef(null);
+  const ringtone = useRef(new Audio("/ringtone.mp3"));
+  const navigate = useNavigate();
+  const [incomingCall, setIncomingCall] = useState(null);
+  const [callAccepted, setCallAccepted] = useState(false);
 
   useEffect(() => {
-    // 1. Setup WebSocket
     socket.current = new WebSocket(`ws://localhost:8000/ws/${currentUser}`);
-
-    // 2. Setup WebRTC
     peerConnection.current = new RTCPeerConnection();
 
-    // 3. Handle ICE candidates
     peerConnection.current.onicecandidate = (event) => {
       if (event.candidate) {
-        socket.current.send(JSON.stringify({
-          type: "ice",
-          to: friend,
-          from: currentUser,
-          candidate: event.candidate,
-        }));
+        socket.current.send(
+          JSON.stringify({
+            type: "ice",
+            to: friend,
+            from: currentUser,
+            candidate: event.candidate,
+          })
+        );
       }
     };
 
-    // 4. Handle remote stream
     peerConnection.current.ontrack = (event) => {
       remoteVideoRef.current.srcObject = event.streams[0];
     };
 
-    // 5. Get local media stream
-    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-      .then((stream) => {
-        localVideoRef.current.srcObject = stream;
+    socket.current.onmessage = async (event) => {
+      const message = JSON.parse(event.data);
+      console.log("📥 Message received:", message);
 
-        stream.getTracks().forEach((track) => {
-          peerConnection.current.addTrack(track, stream);
-        });
+      switch (message.type) {
+        case "offer":
+          ringtone.current.play();
+          setIncomingCall(message);
+          break;
 
-        // If caller, create offer
-        if (currentUser < friend) {
-          peerConnection.current.createOffer()
-            .then(offer => peerConnection.current.setLocalDescription(offer))
-            .then(() => {
-              socket.current.send(JSON.stringify({
-                type: "offer",
-                offer: peerConnection.current.localDescription,
-                to: friend,
-                from: currentUser
-              }));
-            });
-        }
-      })
-      .catch((err) => {
-        console.error("⚠️ getUserMedia failed:", err);
-        alert("⚠️ Please allow camera and mic access.");
+        case "answer":
+          await peerConnection.current.setRemoteDescription(
+            new RTCSessionDescription(message.answer)
+          );
+          break;
+
+        case "ice":
+          if (message.candidate) {
+            await peerConnection.current.addIceCandidate(
+              new RTCIceCandidate(message.candidate)
+            );
+          }
+          break;
+
+        case "hangup":
+          handleHangUp(true);
+          break;
+
+        case "incoming_call":
+          if (!isCaller) {
+            startCall();
+          }
+          break;
+
+        default:
+          console.warn("Unhandled message type:", message.type);
+      }
+    };
+
+    if (isCaller) {
+      startCall();
+    }
+
+    return () => cleanup();
+  }, []);
+
+  const startCall = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      localStream.current = stream;
+      if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+
+      stream.getTracks().forEach((track) => {
+        peerConnection.current.addTrack(track, stream);
       });
 
-    // 6. Handle incoming socket messages
-    socket.current.onmessage = async (event) => {
-      const msg = JSON.parse(event.data);
+      const offer = await peerConnection.current.createOffer();
+      await peerConnection.current.setLocalDescription(offer);
 
-      if (msg.type === "offer") {
-        await peerConnection.current.setRemoteDescription(new RTCSessionDescription(msg.offer));
-        const answer = await peerConnection.current.createAnswer();
-        await peerConnection.current.setLocalDescription(answer);
-        socket.current.send(JSON.stringify({
-          type: "answer",
-          answer,
-          to: msg.from,
-          from: currentUser
-        }));
-      }
+      socket.current.send(
+        JSON.stringify({
+          type: "offer",
+          offer,
+          to: friend,
+          from: currentUser,
+        })
+      );
+    } catch (err) {
+      console.error("Failed to start call:", err);
+    }
+  };
 
-      if (msg.type === "answer") {
-        await peerConnection.current.setRemoteDescription(new RTCSessionDescription(msg.answer));
-      }
+  const acceptCall = async () => {
+    ringtone.current.pause();
+    setCallAccepted(true);
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    localStream.current = stream;
+    if (localVideoRef.current) localVideoRef.current.srcObject = stream;
 
-      if (msg.type === "ice" && msg.candidate) {
-        await peerConnection.current.addIceCandidate(new RTCIceCandidate(msg.candidate));
-      }
+    stream.getTracks().forEach((track) => {
+      peerConnection.current.addTrack(track, stream);
+    });
 
-      if (msg.type === "hangup") {
-        // Cleanup on receiving hangup
-        if (localVideoRef.current?.srcObject) {
-          localVideoRef.current.srcObject.getTracks().forEach(track => track.stop());
-          localVideoRef.current.srcObject = null;
-        }
-        if (remoteVideoRef.current?.srcObject) {
-          remoteVideoRef.current.srcObject.getTracks().forEach(track => track.stop());
-          remoteVideoRef.current.srcObject = null;
-        }
-        if (peerConnection.current) {
-          peerConnection.current.close();
-          peerConnection.current = null;
-        }
-        alert(`📴 ${msg.from} ended the call`);
-      }
-    };
+    await peerConnection.current.setRemoteDescription(new RTCSessionDescription(incomingCall.offer));
+    const answer = await peerConnection.current.createAnswer();
+    await peerConnection.current.setLocalDescription(answer);
 
-    return () => {
-      // Cleanup on component unmount
-      if (peerConnection.current) peerConnection.current.close();
+    socket.current.send(
+      JSON.stringify({
+        type: "answer",
+        answer,
+        to: incomingCall.from,
+        from: currentUser,
+      })
+    );
+  };
+
+  const rejectCall = () => {
+    ringtone.current.pause();
+    setIncomingCall(null);
+  };
+
+  const handleHangUp = (isRemote = false) => {
+    if (localStream.current) {
+      localStream.current.getTracks().forEach((track) => track.stop());
+    }
+
+    if (peerConnection.current) peerConnection.current.close();
+
+    if (!isRemote && socket.current?.readyState === WebSocket.OPEN) {
+      socket.current.send(
+        JSON.stringify({
+          type: "hangup",
+          from: currentUser,
+          to: friend,
+        })
+      );
+    }
+
+    fetch("http://localhost:8000/end-call", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ from: currentUser, to: friend }),
+    });
+
+    setTimeout(() => {
       if (socket.current) socket.current.close();
-    };
-  }, [currentUser, friend]);
+      navigate("/call-ended");
+    }, 300);
+  };
 
-  const handleHangUp = () => {
-    // 1. Stop local stream
-    const stream = localVideoRef.current?.srcObject;
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      localVideoRef.current.srcObject = null;
+  const cleanup = () => {
+    if (localStream.current) {
+      localStream.current.getTracks().forEach((track) => track.stop());
     }
-
-    // 2. Close peer connection
-    if (peerConnection.current) {
-      peerConnection.current.close();
-      peerConnection.current = null;
+    if (peerConnection.current) peerConnection.current.close();
+    if (socket.current && socket.current.readyState === WebSocket.OPEN) {
+      socket.current.close();
     }
-
-    // 3. Send hang-up message
-    if (socket.current) {
-      socket.current.send(JSON.stringify({
-        type: "hangup",
-        to: friend,
-        from: currentUser
-      }));
-    }
-
-    // 4. Clear remote stream
-    if (remoteVideoRef.current?.srcObject) {
-      remoteVideoRef.current.srcObject.getTracks().forEach(track => track.stop());
-      remoteVideoRef.current.srcObject = null;
-    }
-
-    alert("📞 Call ended");
   };
 
   return (
-    <div>
-      <h2>📹 Video Call Between {currentUser} and {friend}</h2>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-        <video ref={localVideoRef} autoPlay muted style={{ width: '45%' }} />
-        <video ref={remoteVideoRef} autoPlay style={{ width: '45%' }} />
-      </div>
-      <button onClick={handleHangUp} style={{ padding: '10px 20px', backgroundColor: '#ff4d4d', color: 'white', border: 'none', borderRadius: '5px' }}>
-        📴 Hang Up
-      </button>
+    <div style={{ textAlign: "center" }}>
+      {incomingCall && !callAccepted ? (
+        <div>
+          <h2>📞 Incoming Call from {incomingCall.from}</h2>
+          <button onClick={acceptCall}>✅ Accept</button>
+          <button onClick={rejectCall}>❌ Reject</button>
+        </div>
+      ) : (
+        <>
+          <h2>📹 Video Call Between {currentUser} and {friend}</h2>
+          <div style={{ display: "flex", justifyContent: "center", gap: "20px" }}>
+            <video ref={localVideoRef} autoPlay muted playsInline style={{ width: "45%" }} />
+            <video ref={remoteVideoRef} autoPlay playsInline style={{ width: "45%" }} />
+          </div>
+          <button onClick={() => handleHangUp(false)} style={{ marginTop: "20px", padding: "10px 20px" }}>
+            🔴 Hang Up
+          </button>
+        </>
+      )}
     </div>
   );
 }
