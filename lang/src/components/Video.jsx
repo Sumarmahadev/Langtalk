@@ -8,7 +8,7 @@ function Video({ currentUser, friend }) {
 
   useEffect(() => {
     // 1. Setup WebSocket
-    socket.current = new WebSocket(`ws://localhost:8000/ws/${currentUser}`);
+    socket.current = new WebSocket(`ws://langtalk.onrender.com/ws/${currentUser}`);
 
     // 2. Setup WebRTC
     peerConnection.current = new RTCPeerConnection();
