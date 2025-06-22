@@ -4,15 +4,23 @@ function Notifications({ currentUser }) {
   const [requests, setRequests] = useState([]);
 
   useEffect(() => {
+<<<<<<< HEAD
     fetch(`http://localhost:8000/friend-requests/${currentUser}`)
 	//fetch(` https://metal-buckets-burn.loca.lt/friend-requests/${currentUser}`)
+=======
+    fetch(`https://langtalk.onrender.com/friend-requests/${currentUser}`)
+>>>>>>> 785191aab9744e6b93c17f84774dfba6f38a4432
       .then((res) => res.json())
       .then((data) => setRequests(data));
   }, [currentUser]);
 
   const acceptRequest = async (fromUser) => {
+<<<<<<< HEAD
     const res = await fetch("http://localhost:8000/accept-request", {
     // const res = await fetch(" https://metal-buckets-burn.loca.lt/accept-request", {
+=======
+    const res = await fetch("https://langtalk.onrender.com/accept-request", {
+>>>>>>> 785191aab9744e6b93c17f84774dfba6f38a4432
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ from_user: fromUser, to_user: currentUser }),

@@ -3,13 +3,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import mysql.connector
 import json
+import os
 
 app = FastAPI()
 
 # Allow frontend to connect
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Update this if frontend domain changes
+  
+    allow_origins=["https://langtalk.netlify.app"]
+
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

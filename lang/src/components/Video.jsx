@@ -13,7 +13,16 @@ function Video({ currentUser, friend, isCaller }) {
   const [callAccepted, setCallAccepted] = useState(false);
 
   useEffect(() => {
+<<<<<<< HEAD
     socket.current = new WebSocket(`ws://localhost:8000/ws/${currentUser}`);
+=======
+    // 1. Setup WebSocket
+   // socket.current = new WebSocket(`ws://langtalk.onrender.com/ws/${currentUser}`);
+    socket.current = new WebSocket(`wss://langtalk.onrender.com/ws/${currentUser}`);
+
+
+    // 2. Setup WebRTC
+>>>>>>> 785191aab9744e6b93c17f84774dfba6f38a4432
     peerConnection.current = new RTCPeerConnection();
 
     peerConnection.current.onicecandidate = (event) => {

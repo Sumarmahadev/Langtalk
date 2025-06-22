@@ -6,12 +6,22 @@ function Login({ onLogin }) {
 
   const handleLogin = async () => {
     try {
+<<<<<<< HEAD
       const res = await fetch("http://localhost:8000/login", {
 	//	const res = await fetch(" https://metal-buckets-burn.loca.lt/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: name, password }),
       });
+=======
+       const res = await fetch("https://langtalk.onrender.com/login", {
+       method: "POST",
+       headers: { "Content-Type": "application/json" },
+       body: JSON.stringify({ username: name, password }),
+    });
+
+    
+>>>>>>> 785191aab9744e6b93c17f84774dfba6f38a4432
 
       if (!res.ok) throw new Error("Login failed");
 

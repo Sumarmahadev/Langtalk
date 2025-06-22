@@ -41,3 +41,9 @@ urllib3==2.3.0
 uvicorn==0.34.3
 websockets==15.0.1
 wsproto==1.2.0
+fastapi
+uvicorn
+mysql-connector-python
+python-dotenv
+
+

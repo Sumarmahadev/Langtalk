@@ -13,8 +13,12 @@ function Register({ onRegister }) {
 
     setLoading(true);
     try {
+<<<<<<< HEAD
 const res = await fetch("http://localhost:8000/register", {
 	 // const res = await fetch(" https://metal-buckets-burn.loca.lt/register", {
+=======
+      const res = await fetch("https://langtalk.onrender.com/register", {
+>>>>>>> 785191aab9744e6b93c17f84774dfba6f38a4432
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),

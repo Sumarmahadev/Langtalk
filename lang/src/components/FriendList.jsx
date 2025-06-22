@@ -4,8 +4,12 @@ function FriendList({ currentUser }) {
   const [friends, setFriends] = useState([]);
 
   useEffect(() => {
+<<<<<<< HEAD
     fetch(`http://localhost:8000/friends/${currentUser}`)
 	//fetch(` https://metal-buckets-burn.loca.lt/friends/${currentUser}`)
+=======
+    fetch(`https://langtalk.onrender.com/friends/${currentUser}`)
+>>>>>>> 785191aab9744e6b93c17f84774dfba6f38a4432
       .then((res) => res.json())
       .then((data) => {
         setFriends(data);
@@ -15,8 +19,14 @@ function FriendList({ currentUser }) {
 
   const startCall = async (friend) => {
     try {
+<<<<<<< HEAD
       const res = await fetch("http://localhost:8000/start-call", {
 	//	  const res = await fetch(" https://metal-buckets-burn.loca.lt/start-call", {
+=======
+ 
+      const res = await fetch("https://langtalk.onrender.com/start-call", {
+
+>>>>>>> 785191aab9744e6b93c17f84774dfba6f38a4432
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

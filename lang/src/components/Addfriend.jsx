@@ -5,8 +5,12 @@ function AddFriend({ currentUser }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+<<<<<<< HEAD
     fetch(`http://localhost:8000/available-users/${currentUser}`)
 	//fetch(` https://metal-buckets-burn.loca.lt/available-users/${currentUser}`)
+=======
+    fetch(`https://langtalk.onrender.com/available-users/${currentUser}`)
+>>>>>>> 785191aab9744e6b93c17f84774dfba6f38a4432
       .then((res) => res.json())
       .then((data) => {
         console.log("Available users:", data);
@@ -22,8 +26,12 @@ function AddFriend({ currentUser }) {
   const sendRequest = async (to_user) => {
     console.log("Sending friend request from:", currentUser, "to:", to_user);
     try {
+<<<<<<< HEAD
       const res = await fetch("http://localhost:8000/friend-request", {
 	//	const res = await fetch(" https://metal-buckets-burn.loca.lt/friend-request", {
+=======
+      const res = await fetch("https://langtalk.onrender.com/friend-request", {
+>>>>>>> 785191aab9744e6b93c17f84774dfba6f38a4432
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ from_user: currentUser, to_user }),
