@@ -25,9 +25,6 @@ function Main2() {
           <source src={backgroundVideo} type="video/mp4" />
           Your browser does not support the video tag.
         </video>
-
-
-
     <div Class="conatiner w-50 h-75  mb-5 mt-5 br-2px solid red">
      <div className="card " style={{width: "30rem",backgroundColor: 'rgba(255, 255, 255, 0.8)',   backdropFilter: 'blur(5px)',  borderRadius: '10px',}} bg>
   <img src={pic2} className="card-img-top" style={{opacity: 0.3, 

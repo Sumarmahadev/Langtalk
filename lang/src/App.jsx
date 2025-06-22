@@ -28,7 +28,9 @@ function App() {
   // Setup WebSocket after login
   useEffect(() => {
     if (user && !socketRef.current) {
-      const ws = new WebSocket(`ws://langtalk.onrender.com/ws/${user}`);
+      //const ws = new WebSocket(`ws://langtalk.onrender.com/ws/${user}`);
+	  const ws = new WebSocket(`wss://langtalk.onrender.com/ws/${user}`);
+
       socketRef.current = ws;
 
       ws.onopen = () => {

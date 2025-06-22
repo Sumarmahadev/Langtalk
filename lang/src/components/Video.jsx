@@ -13,18 +13,14 @@ function Video({ currentUser, friend, isCaller }) {
   const [callAccepted, setCallAccepted] = useState(false);
 
   useEffect(() => {
-<<<<<<< HEAD
-    socket.current = new WebSocket(`ws://localhost:8000/ws/${currentUser}`);
-=======
+    //socket.current = new WebSocket(`ws://localhost:8000/ws/${currentUser}`);
     // 1. Setup WebSocket
    // socket.current = new WebSocket(`ws://langtalk.onrender.com/ws/${currentUser}`);
     socket.current = new WebSocket(`wss://langtalk.onrender.com/ws/${currentUser}`);
 
 
     // 2. Setup WebRTC
->>>>>>> 785191aab9744e6b93c17f84774dfba6f38a4432
     peerConnection.current = new RTCPeerConnection();
-
     peerConnection.current.onicecandidate = (event) => {
       if (event.candidate) {
         socket.current.send(
@@ -161,7 +157,8 @@ function Video({ currentUser, friend, isCaller }) {
       );
     }
 
-    fetch("http://localhost:8000/end-call", {
+    //fetch("http://localhost:8000/end-call", {
+	fetch(" https://langtalk.onrender.com/end-call", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ from: currentUser, to: friend }),
