@@ -36,6 +36,11 @@ sqlparse==0.5.3
 starlette==0.46.2
 typing-inspection==0.4.1
 typing_extensions==4.13.0
+flask
+gunicorn
+python-dotenv
+mysql-connector-python
+
 tzdata==2025.2
 urllib3==2.3.0
 uvicorn==0.34.3
