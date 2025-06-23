@@ -2,8 +2,14 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, HTTPExcept
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import mysql.connector
+from dotenv import load_dotenv
 import json
 import os
+
+
+
+load_dotenv()  # Only needed for local testing
+
 
 app = FastAPI()
 
