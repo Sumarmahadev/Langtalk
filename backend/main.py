@@ -17,13 +17,14 @@ app.add_middleware(
 )
 
 # DB connection
-def get_connection():
-    return mysql.connector.connect(
-        host=os.getenv("DB_HOST"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        database=os.getenv("DB_NAME")
-    )
+conn = mysql.connector.connect(
+    host=os.getenv("DB_HOST"),       # e.g., 'containers-us-west-12.railway.app'
+    user=os.getenv("DB_USER"),       # e.g., 'root'
+    password=os.getenv("DB_PASS"),   # e.g., 'abcd1234'
+    database=os.getenv("DB_NAME"),   # e.g., 'railway'
+    port=int(os.getenv("DB_PORT"))   # usually 3306 or provided by Railway
+)
+
 
 # Models
 class RegisterRequest(BaseModel):
