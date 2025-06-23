@@ -11,6 +11,8 @@ import AddFriend from './components/Addfriend';
 import Notifications from './components/Notifications';
 import FriendList from './components/FriendList';
 import { useState, useEffect, useRef } from 'react';
+import CallEnded from './components/CallEnded';
+
 
 function App() {
   const [user, setUser] = useState(null);
@@ -140,6 +142,7 @@ function App() {
           <Route path="add-friend" element={<AddFriend currentUser={user} />} />
           <Route path="notifications" element={<Notifications currentUser={user} />} />
           <Route path="friends" element={<FriendList currentUser={user} />} />
+          <Route path="/call-ended" element={<CallEnded />} />
         </Route>
       </Routes>
     </>
