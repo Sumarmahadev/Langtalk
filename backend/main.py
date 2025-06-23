@@ -21,7 +21,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+db_port = os.getenv("DB_PORT")
+if db_port is None:
+    raise ValueError("DB_PORT is not set in environment variables")
 # DB connection
 conn = mysql.connector.connect(
     host=os.getenv("DB_HOST"),       # e.g., 'containers-us-west-12.railway.app'
