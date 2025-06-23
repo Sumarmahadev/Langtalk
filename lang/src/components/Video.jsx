@@ -16,7 +16,7 @@ function Video({ currentUser, friend, isCaller }) {
     //socket.current = new WebSocket(`ws://localhost:8000/ws/${currentUser}`);
     // 1. Setup WebSocket
    // socket.current = new WebSocket(`ws://langtalk.onrender.com/ws/${currentUser}`);
-    socket.current = new WebSocket(`wss://langtalk.onrender.com/ws/${currentUser}`);
+     socket.current = new WebSocket(`wss://langtalk.onrender.com/ws/${currentUser}`);
 
 
     // 2. Setup WebRTC
@@ -158,7 +158,7 @@ function Video({ currentUser, friend, isCaller }) {
     }
 
     //fetch("http://localhost:8000/end-call", {
-	fetch(" https://langtalk.onrender.com/end-call", {
+      fetch(" https://langtalk.onrender.com/end-call", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ from: currentUser, to: friend }),
