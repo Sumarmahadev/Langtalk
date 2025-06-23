@@ -95,7 +95,7 @@ def login(data: LoginRequest):
     finally:
         cursor.close()
         conn.close()
-app.get("/available-users/{username}")
+@app.get("/available-users/{username}")
 def get_available_users(username: str):
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
