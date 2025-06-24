@@ -9,28 +9,25 @@ function Video({ currentUser, friend, isCaller }) {
   const localStream = useRef(null);
   const ringtone = useRef(new Audio("/ringtone.mp3"));
   const navigate = useNavigate();
+
   const [incomingCall, setIncomingCall] = useState(null);
   const [callAccepted, setCallAccepted] = useState(false);
 
   useEffect(() => {
-    //socket.current = new WebSocket(`ws://localhost:8000/ws/${currentUser}`);
-    // 1. Setup WebSocket
-   // socket.current = new WebSocket(`ws://langtalk.onrender.com/ws/${currentUser}`);
-     socket.current = new WebSocket(`wss://langtalk.onrender.com/ws/${currentUser}`);
+    // Setup WebSocket
+    socket.current = new WebSocket(`wss://langtalk.onrender.com/ws/${currentUser}`);
 
-
-    // 2. Setup WebRTC
+    // Setup Peer Connection
     peerConnection.current = new RTCPeerConnection();
+
     peerConnection.current.onicecandidate = (event) => {
       if (event.candidate) {
-        socket.current.send(
-          JSON.stringify({
-            type: "ice",
-            to: friend,
-            from: currentUser,
-            candidate: event.candidate,
-          })
-        );
+        socket.current.send(JSON.stringify({
+          type: "ice",
+          to: friend,
+          from: currentUser,
+          candidate: event.candidate,
+        }));
       }
     };
 
@@ -67,9 +64,8 @@ function Video({ currentUser, friend, isCaller }) {
           break;
 
         case "incoming_call":
-          if (!isCaller) {
-            startCall();
-          }
+          // Receiver initiates call setup
+          if (!isCaller) startCall();
           break;
 
         default:
@@ -77,9 +73,7 @@ function Video({ currentUser, friend, isCaller }) {
       }
     };
 
-    if (isCaller) {
-      startCall();
-    }
+    if (isCaller) startCall();
 
     return () => cleanup();
   }, []);
@@ -90,49 +84,49 @@ function Video({ currentUser, friend, isCaller }) {
       localStream.current = stream;
       if (localVideoRef.current) localVideoRef.current.srcObject = stream;
 
-      stream.getTracks().forEach((track) => {
-        peerConnection.current.addTrack(track, stream);
-      });
+      stream.getTracks().forEach((track) =>
+        peerConnection.current.addTrack(track, stream)
+      );
 
       const offer = await peerConnection.current.createOffer();
       await peerConnection.current.setLocalDescription(offer);
 
-      socket.current.send(
-        JSON.stringify({
-          type: "offer",
-          offer,
-          to: friend,
-          from: currentUser,
-        })
-      );
+      socket.current.send(JSON.stringify({
+        type: "offer",
+        offer,
+        to: friend,
+        from: currentUser,
+      }));
     } catch (err) {
-      console.error("Failed to start call:", err);
+      console.error("❌ Failed to start call:", err);
     }
   };
 
   const acceptCall = async () => {
     ringtone.current.pause();
     setCallAccepted(true);
+
     const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
     localStream.current = stream;
     if (localVideoRef.current) localVideoRef.current.srcObject = stream;
 
-    stream.getTracks().forEach((track) => {
-      peerConnection.current.addTrack(track, stream);
-    });
+    stream.getTracks().forEach((track) =>
+      peerConnection.current.addTrack(track, stream)
+    );
 
-    await peerConnection.current.setRemoteDescription(new RTCSessionDescription(incomingCall.offer));
+    await peerConnection.current.setRemoteDescription(
+      new RTCSessionDescription(incomingCall.offer)
+    );
+
     const answer = await peerConnection.current.createAnswer();
     await peerConnection.current.setLocalDescription(answer);
 
-    socket.current.send(
-      JSON.stringify({
-        type: "answer",
-        answer,
-        to: incomingCall.from,
-        from: currentUser,
-      })
-    );
+    socket.current.send(JSON.stringify({
+      type: "answer",
+      answer,
+      to: incomingCall.from,
+      from: currentUser,
+    }));
   };
 
   const rejectCall = () => {
@@ -144,21 +138,17 @@ function Video({ currentUser, friend, isCaller }) {
     if (localStream.current) {
       localStream.current.getTracks().forEach((track) => track.stop());
     }
-
     if (peerConnection.current) peerConnection.current.close();
 
     if (!isRemote && socket.current?.readyState === WebSocket.OPEN) {
-      socket.current.send(
-        JSON.stringify({
-          type: "hangup",
-          from: currentUser,
-          to: friend,
-        })
-      );
+      socket.current.send(JSON.stringify({
+        type: "hangup",
+        from: currentUser,
+        to: friend,
+      }));
     }
 
-    //fetch("http://localhost:8000/end-call", {
-      fetch(" https://langtalk.onrender.com/end-call", {
+    fetch("https://langtalk.onrender.com/end-call", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ from: currentUser, to: friend }),
@@ -166,6 +156,7 @@ function Video({ currentUser, friend, isCaller }) {
 
     setTimeout(() => {
       if (socket.current) socket.current.close();
+      localStorage.removeItem("isCaller");
       navigate("/call-ended");
     }, 300);
   };
@@ -195,7 +186,10 @@ function Video({ currentUser, friend, isCaller }) {
             <video ref={localVideoRef} autoPlay muted playsInline style={{ width: "45%" }} />
             <video ref={remoteVideoRef} autoPlay playsInline style={{ width: "45%" }} />
           </div>
-          <button onClick={() => handleHangUp(false)} style={{ marginTop: "20px", padding: "10px 20px" }}>
+          <button
+            onClick={() => handleHangUp(false)}
+            style={{ marginTop: "20px", padding: "10px 20px" }}
+          >
             🔴 Hang Up
           </button>
         </>
