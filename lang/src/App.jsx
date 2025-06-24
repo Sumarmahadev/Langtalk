@@ -11,8 +11,6 @@ import AddFriend from './components/Addfriend';
 import Notifications from './components/Notifications';
 import FriendList from './components/FriendList';
 import { useState, useEffect, useRef } from 'react';
-import CallEnded from './components/CallEnded';
-
 
 function App() {
   const [user, setUser] = useState(null);
@@ -31,7 +29,7 @@ function App() {
   useEffect(() => {
     if (user && !socketRef.current) {
       //const ws = new WebSocket(`ws://langtalk.onrender.com/ws/${user}`);
-      const ws = new WebSocket(`wss://langtalk.onrender.com/ws/${user}`);
+	  const ws = new WebSocket(`wss://langtalk.onrender.com/ws/${user}`);
 
       socketRef.current = ws;
 
@@ -137,12 +135,15 @@ function App() {
       <Routes>
         <Route path="/" element={<Navbar />}>
           <Route index element={<Main2 />} />
-          <Route path="video" element={<Video currentUser={user} friend={friend} />} />
+          //<Route path="video" element={<Video currentUser={user} friend={friend} />} />
+		   <Route
+            path="video"
+            element={<Video currentUser={user} friend={friend} isCaller={isCaller} />}
+          />
           <Route path="logout" element={<Logout />} />
           <Route path="add-friend" element={<AddFriend currentUser={user} />} />
           <Route path="notifications" element={<Notifications currentUser={user} />} />
           <Route path="friends" element={<FriendList currentUser={user} />} />
-          <Route path="/call-ended" element={<CallEnded />} />
         </Route>
       </Routes>
     </>
