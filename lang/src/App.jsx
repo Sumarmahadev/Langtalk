@@ -17,7 +17,11 @@ function App() {
   const [showRegister, setShowRegister] = useState(false);
   const socketRef = useRef(null);
 
-  // Check localStorage for user on load
+  // ✅ Extract the 'from' param from the URL
+  const friend = new URLSearchParams(window.location.search).get('from');
+  const isCaller = !friend; // If no friend in URL, current user initiated the call
+
+  // ✅ Get user from localStorage
   useEffect(() => {
     const username = localStorage.getItem("username");
     if (username) {
@@ -25,12 +29,10 @@ function App() {
     }
   }, []);
 
-  // Setup WebSocket after login
+  // ✅ Setup WebSocket on login
   useEffect(() => {
     if (user && !socketRef.current) {
-      //const ws = new WebSocket(`ws://langtalk.onrender.com/ws/${user}`);
-	  const ws = new WebSocket(`wss://langtalk.onrender.com/ws/${user}`);
-
+      const ws = new WebSocket(`wss://langtalk.onrender.com/ws/${user}`);
       socketRef.current = ws;
 
       ws.onopen = () => {
@@ -40,17 +42,14 @@ function App() {
       ws.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data);
-
-          // 🎯 Handle incoming video call
           if (message.type === "incoming_call") {
             const caller = message.from;
             const accept = window.confirm(`📞 Incoming video call from ${caller}. Accept?`);
-
             if (accept) {
               window.location.href = `/video?from=${caller}`;
             }
           } else {
-            alert(event.data); // for friend request or other plain messages
+            alert(event.data);
           }
         } catch (e) {
           console.log("🟡 Non-JSON message:", event.data);
@@ -69,7 +68,7 @@ function App() {
     }
   }, [user]);
 
-  // If not logged in
+  // ✅ If user not logged in
   if (!user) {
     return showRegister ? (
       <Register onRegister={() => setShowRegister(false)} />
@@ -88,8 +87,6 @@ function App() {
       </>
     );
   }
-
-  const friend = new URLSearchParams(window.location.search).get('from');
 
   return (
     <>
@@ -135,11 +132,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navbar />}>
           <Route index element={<Main2 />} />
-          //<Route path="video" element={<Video currentUser={user} friend={friend} />} />
-		   <Route
-            path="video"
-            element={<Video currentUser={user} friend={friend} isCaller={isCaller} />}
-          />
+          <Route path="video" element={<Video currentUser={user} friend={friend} isCaller={isCaller} />} />
           <Route path="logout" element={<Logout />} />
           <Route path="add-friend" element={<AddFriend currentUser={user} />} />
           <Route path="notifications" element={<Notifications currentUser={user} />} />
